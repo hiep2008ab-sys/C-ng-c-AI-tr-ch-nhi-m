@@ -1,1 +1,1 @@
-# C-ng-c-AI-tr-ch-nhi-m
+AI trach nhiem
