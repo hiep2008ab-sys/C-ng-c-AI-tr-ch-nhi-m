@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Có Trách Nhiệm • Kiểm tra dữ liệu & Kiểm chứng thông tin</title>
+  <style>
+    :root {
+      --sidebar-bg: #004e98;
+      --sidebar-hover: rgba(255, 255, 255, 0.12);
+      --primary: #0056b3;
+      --primary-light: #e8f1fc;
+      --bg-main: #f4f7fb;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --safe: #10b981;
+      --low: #3b82f6;
+      --medium: #f59e0b;
+      --high: #f97316;
+      --critical: #ef4444;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* ===== SIDEBAR (Giống Ảnh 2) ===== */
+    .sidebar {
+      width: 86px;
+      background: var(--sidebar-bg);
+      min-height: 100vh;
+      padding: 18px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 100;
+      box-shadow: 4px 0 20px rgba(0, 40, 85, 0.12);
+    }
+
+    .brand-mini {
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      text-align: center;
+      padding: 6px 4px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+      width: 100%;
+      margin-bottom: 4px;
+    }
+
+    .nav-btn {
+      width: 58px;
+      height: 58px;
+      border: none;
+      border-radius: 16px;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.85);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .nav-btn svg {
+      width: 26px;
+      height: 26px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-btn span.nav-label {
+      font-size: 9.5px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .nav-btn:hover {
+      background: var(--sidebar-hover);
+      color: #ffffff;
+    }
+
+    .nav-btn.active {
+      background: #ffffff;
+      color: var(--sidebar-bg);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.16);
+    }
+
+    /* Tooltip on desktop */
+    .nav-btn::after {
+      content: attr(data-title);
+      position: absolute;
+      left: 72px;
+      background: #0f172a;
+      color: #fff;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-6px);
+      transition: 0.2s;
+      z-index: 200;
+    }
+
+    .nav-btn:hover::after {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ===== MAIN LAYOUT ===== */
+    .main-wrapper {
+      margin-left: 86px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .topbar-title h1 {
+      font-size: 19px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .topbar-title p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .dot-pulse {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--safe);
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+    }
+
+    .content {
+      padding: 24px 28px 90px;
+      max-width: 1180px;
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
+    }
+
+    .page {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== CARDS & COMMON UI ===== */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--sidebar-bg);
+      color: #fff;
+    }
+    .btn-primary:hover { background: #003e7a; transform: translateY(-1px); }
+
+    .btn-outline {
+      background: #fff;
+      color: var(--sidebar-bg);
+      border: 1.5px solid var(--sidebar-bg);
+    }
+    .btn-outline:hover { background: var(--primary-light); }
+
+    .btn-warning {
+      background: #fff7ed;
+      color: #c2410c;
+      border: 1px solid #fdba74;
+    }
+    .btn-warning:hover { background: #ffedd5; }
+
+    .btn-danger {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+    .btn-danger:hover { background: #fee2e2; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 20px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    /* ===== HOME / LỘ TRÌNH (Lấy cảm hứng từ Ảnh 2) ===== */
+    .hero-banner {
+      background: linear-gradient(135deg, #004e98 0%, #1e73be 60%, #4b9ce2 100%);
+      color: #fff;
+      border-radius: 20px;
+      padding: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 12px 28px rgba(0, 78, 152, 0.22);
+    }
+
+    .hero-banner h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+
+    .hero-banner p {
+      font-size: 14.5px;
+      opacity: 0.92;
+      max-width: 620px;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .stat-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .stat-box .num {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--sidebar-bg);
+    }
+
+    .stat-box .lbl {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Timeline Lộ trình giống ảnh 2 */
+    .timeline {
+      position: relative;
+      padding-left: 42px;
+      margin-top: 10px;
+    }
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 23px;
+      top: 12px;
+      bottom: 12px;
+      width: 3px;
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+    }
+    .timeline-icon {
+      position: absolute;
+      left: -42px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #dbeafe;
+      border: 4px solid #fff;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .timeline-card {
+      flex: 1;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-left: 16px;
+    }
+    .timeline-card h4 {
+      color: var(--sidebar-bg);
+      margin-bottom: 6px;
+      font-size: 15.5px;
+    }
+    .timeline-card ul {
+      padding-left: 18px;
+      color: #334155;
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+
+    /* ===== CHECKER PAGE ===== */
+    textarea, input[type="text"], input[type="email"], select {
+      width: 100%;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: var(--text-main);
+      background: #fff;
+      transition: border 0.2s;
+    }
+    textarea:focus, input:focus, select:focus {
+      outline: none;
+      border-color: var(--sidebar-bg);
+      box-shadow: 0 0 0 3px rgba(0, 78, 152, 0.1);
+    }
+
+    .upload-zone {
+      border: 2px dashed #93c5fd;
+      background: #f8fbff;
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 12px;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      background: #eff6ff;
+      border-color: var(--sidebar-bg);
+    }
+    .upload-zone p {
+      font-size: 13.5px;
+      color: #475569;
+    }
+    .file-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    /* Risk meter */
+    .risk-banner {
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border-left: 6px solid var(--safe);
+      background: #ecfdf5;
+    }
+    .risk-bar-track {
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 10px 0 6px;
+    }
+    .risk-bar-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.4s ease, background 0.3s ease;
+    }
+
+    .finding-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 8px;
+      font-size: 13.5px;
+      gap: 10px;
+    }
+
+    .tag {
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .tag-critical { background: #fee2e2; color: #b91c1c; }
+    .tag-high { background: #ffedd5; color: #c2410c; }
+    .tag-medium { background: #fef3c7; color: #b45309; }
+    .tag-low { background: #dbeafe; color: #1d4ed8; }
+    .tag-safe { background: #d1fae5; color: #047857; }
+
+    .highlight-preview {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 13.5px;
+      line-height: 1.7;
+      max-height: 210px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    mark.pii-mark {
+      background: #fecaca;
+      color: #991b1b;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .checklist-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 13.5px;
+      cursor: pointer;
+    }
+    .check-row input {
+      margin-top: 3px;
+      width: 16px;
+      height: 16px;
+      accent-color: var(--sidebar-bg);
+    }
+
+    /* ===== HISTORY PAGE ===== */
+    .history-item {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    /* ===== FEEDBACK PAGE (3 nấc cảm xúc + chat hỗ trợ) ===== */
+    .emoji-scale {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin: 14px 0 18px;
+    }
+    .emoji-btn {
+      border: 2px solid #e2e8f0;
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 18px 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .emoji-btn .emoji-face {
+      font-size: 40px;
+      display: block;
+      margin-bottom: 8px;
+      transition: transform 0.2s;
+    }
+    .emoji-btn strong {
+      display: block;
+      font-size: 14.5px;
+      color: #1e293b;
+    }
+    .emoji-btn span {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .emoji-btn:hover {
+      border-color: #93c5fd;
+      transform: translateY(-2px);
+    }
+    .emoji-btn.selected-sad {
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+    .emoji-btn.selected-neutral {
+      border-color: #f59e0b;
+      background: #fffbeb;
+    }
+    .emoji-btn.selected-happy {
+      border-color: #10b981;
+      background: #ecfdf5;
+    }
+
+    .support-chat-box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      height: 360px;
+      background: #f8fafc;
+      overflow: hidden;
+    }
+    .support-messages {
+      flex: 1;
+      padding: 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ===== FOOTER (Giống Ảnh 1) ===== */
+    .app-footer {
+      text-align: center;
+      padding: 16px 20px 26px;
+      color: #94a3b8;
+      font-size: 13.5px;
+      font-weight: 600;
+    }
+
+    /* ===== FLOATING CHATBOT WIDGET (Giống hệt Ảnh 1) ===== */
+    .chatbot-fab {
+      position: fixed;
+      right: 26px;
+      bottom: 26px;
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, #5b4df5 0%, #7c3aed 100%);
+      box-shadow: 0 10px 28px rgba(91, 77, 245, 0.42), 0 0 0 6px rgba(124, 58, 237, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .chatbot-fab:hover {
+      transform: scale(1.07);
+      box-shadow: 0 14px 34px rgba(91, 77, 245, 0.55);
+    }
+
+    /* Bong bóng chat trắng 3D bên trong nút tím giống Ảnh 1 */
+    .fab-bubble {
+      width: 34px;
+      height: 29px;
+      background: radial-gradient(circle at 35% 30%, #ffffff 0%, #e2e8f0 100%);
+      border-radius: 16px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    }
+    .fab-bubble::after {
+      content: "";
+      position: absolute;
+      bottom: -5px;
+      left: 5px;
+      width: 10px;
+      height: 10px;
+      background: #e2e8f0;
+      clip-path: polygon(0 0, 100% 0, 0 100%);
+    }
+    .fab-dot {
+      width: 4.2px;
+      height: 4.2px;
+      background: #475569;
+      border-radius: 50%;
+    }
+
+    .chatbot-window {
+      position: fixed;
+      right: 26px;
+      bottom: 106px;
+      width: 370px;
+      max-width: calc(100vw - 32px);
+      height: 510px;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.22);
+      border: 1px solid #e2e8f0;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease;
+    }
+    .chatbot-window.open {
+      display: flex;
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #5b4df5 0%, #7c3aed 100%);
+      color: #fff;
+      padding: 15px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .chat-header-info h4 { font-size: 15px; font-weight: 700; }
+    .chat-header-info span { font-size: 11.5px; opacity: 0.9; }
+    .chat-close {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: #fff;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .chat-body {
+      flex: 1;
+      padding: 14px;
+      overflow-y: auto;
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .msg {
+      max-width: 84%;
+      padding: 10px 13px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+    .msg.bot {
+      align-self: flex-start;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      color: #1e293b;
+      border-bottom-left-radius: 4px;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: #5b4df5;
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .quick-replies {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 12px;
+      background: #fff;
+      border-top: 1px solid #f1f5f9;
+    }
+    .quick-chip {
+      font-size: 11.5px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid #ddd6fe;
+      background: #f5f3ff;
+      color: #5b21b6;
+      cursor: pointer;
+    }
+    .quick-chip:hover { background: #ede9fe; }
+
+    .chat-input-bar {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #fff;
+      border-top: 1px solid #e2e8f0;
+    }
+    .chat-input-bar input {
+      flex: 1;
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-size: 13.5px;
+    }
+    .chat-send-btn {
+      background: #5b4df5;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 0 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Switch toggle for Settings */
+    .switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .switch-row:last-child { border-bottom: none; }
+
+    @media (max-width: 900px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .hero-banner { flex-direction: column; align-items: flex-start; }
+    }
+
+    @media (max-width: 600px) {
+      .sidebar { width: 68px; padding: 14px 6px; }
+      .nav-btn { width: 50px; height: 50px; }
+      .nav-btn span.nav-label { display: none; }
+      .main-wrapper { margin-left: 68px; }
+      .content { padding: 16px 14px 96px; }
+      .topbar { padding: 12px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== SIDEBAR TRÁI (ICON GIỐNG ẢNH 2) ===== -->
+  <aside class="sidebar">
+    <div class="brand-mini">AI<br>SAFE</div>
+
+    <!-- Trang chủ: Ngôi nhà -->
+    <button class="nav-btn active" onclick="switchPage('home', this)" data-title="Trang chủ">
+      <svg viewBox="0 0 24 24">
+        <path d="M3 10.5L12 3l9 7.5"></path>
+        <path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"></path>
+      </svg>
+      <span class="nav-label">Trang chủ</span>
+    </button>
+
+    <!-- Kiểm tra dữ liệu & tải tệp: Tài liệu -->
+    <button class="nav-btn" onclick="switchPage('checker', this)" data-title="Kiểm tra & Kiểm chứng">
+      <svg viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="8" y1="13" x2="16" y2="13"></line>
+        <line x1="8" y1="17" x2="13" y2="17"></line>
+      </svg>
+      <span class="nav-label">Kiểm tra</span>
+    </button>
+
+    <!-- Lịch sử tra cứu: Kính lúp -->
+    <button class="nav-btn" onclick="switchPage('history', this)" data-title="Lịch sử tra cứu">
+      <svg viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+      </svg>
+      <span class="nav-label">Lịch sử</span>
+    </button>
+
+    <!-- Cấu hình quy tắc: Bánh răng -->
+    <button class="nav-btn" onclick="switchPage('settings', this)" data-title="Quy tắc & Cài đặt">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.77 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span class="nav-label">Cài đặt</span>
+    </button>
+
+    <!-- Phản hồi đánh giá: Chỉnh sửa / Đánh giá -->
+    <button class="nav-btn" onclick="switchPage('feedback', this)" data-title="Phản hồi & Đánh giá">
+      <svg viewBox="0 0 24 24">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+      </svg>
+      <span class="nav-label">Đánh giá</span>
+    </button>
+  </aside>
+
+  <!-- ===== NỘI DUNG CHÍNH ===== -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h1 id="pageTitle">Trang chủ • Công cụ AI Có Trách Nhiệm</h1>
+        <p id="pageSubtitle">Bảo vệ thông tin cá nhân, minh bạch nguồn dữ liệu và kiểm chứng đầu ra AI</p>
+      </div>
+      <div class="badge-status">
+        <span class="dot-pulse"></span>
+        <span>Bộ lọc bảo mật đang bật</span>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ==================== TRANG 1: TRANG CHỦ ==================== -->
+      <section id="page-home" class="page active">
+        <div class="hero-banner">
+          <div>
+            <h2>Công cụ “AI Có Trách Nhiệm” 🛡️</h2>
+            <p>
+              Kiểm tra dữ liệu đầu vào trước khi gửi cho AI: tự động phát hiện và cảnh báo lộ lọt thông tin cá nhân (PII), đánh giá mức độ nguy hiểm, yêu cầu khai báo nguồn dữ liệu và nhắc người dùng kiểm chứng độ chính xác đầu ra.
+            </p>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <button class="btn" style="background:#fff; color:#004e98;" onclick="goToChecker()">
+                🚀 Bắt đầu kiểm tra ngay
+              </button>
+              <button class="btn" style="background:rgba(255,255,255,0.18); color:#fff; border:1px solid rgba(255,255,255,0.4);" onclick="toggleChatbot(true)">
+                💬 Hỏi Chatbot hỗ trợ
+              </button>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,0.14); padding:18px 22px; border-radius:16px; min-width:220px;">
+            <div style="font-size:13px; opacity:0.9;">Nguyên tắc cốt lõi</div>
+            <div style="font-size:18px; font-weight:700; margin:6px 0;">3 Lớp Bảo Vệ</div>
+            <div style="font-size:13px; line-height:1.7;">
+              1. Quét thông tin cá nhân<br>
+              2. Minh bạch nguồn trích dẫn<br>
+              3. Kiểm chứng đầu ra AI
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-bottom:22px;">
+          <div class="stat-box">
+            <div class="num" id="statTotalScans">0</div>
+            <div class="lbl">Lượt kiểm tra dữ liệu đã thực hiện</div>
+          </div>
+          <div class="stat-box">
+            <div class="num" id="statHighRisks" style="color:#ef4444;">0</div>
+            <div class="lbl">Cảnh báo rủi ro Cao / Nghiêm trọng</div>
+          </div>
+          <div class="stat-box">
+            <div class="num" id="statFeedbacks" style="color:#10b981;">0</div>
+            <div class="lbl">Phản hồi & đánh giá từ người dùng</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📌 LỘ TRÌNH SỬ DỤNG AI CÓ TRÁCH NHIỆM</div>
+          </div>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-icon">📰</div>
+              <div class="timeline-card">
+                <h4>Bước 1: Kiểm tra dữ liệu đầu vào & Tải tệp lên</h4>
+                <ul>
+                  <li>Nhập câu lệnh (prompt), văn bản hoặc tải lên tệp tài liệu (.txt, .csv, .json, .md...).</li>
+                  <li>Hệ thống quét CCCD, số điện thoại, email, tài khoản ngân hàng, mật khẩu/API key, địa chỉ nhà.</li>
+                </ul>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-icon">⚠️</div>
+              <div class="timeline-card">
+                <h4>Bước 2: Đánh giá mức độ nguy hiểm & Che thông tin nhạy cảm</h4>
+                <ul>
+                  <li>Phân loại theo 5 cấp: An toàn – Thấp – Trung bình – Cao – Nghiêm trọng.</li>
+                  <li>Hỗ trợ ẩn/che tự động (Mask PII) trước khi sao chép đưa vào các mô hình AI bên ngoài.</li>
+                </ul>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-icon">✅</div>
+              <div class="timeline-card">
+                <h4>Bước 3: Khai báo nguồn & Kiểm chứng đầu ra</h4>
+                <ul>
+                  <li>Xác nhận nguồn gốc dữ liệu, tránh vi phạm bản quyền và dữ liệu mật nội bộ.</li>
+                  <li>Nhắc kiểm tra chéo thông tin đầu ra của AI để phòng tránh “ảo giác AI” (Hallucination).</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TRANG 2: KIỂM TRA & KIỂM CHỨNG + TẢI TỆP ==================== -->
+      <section id="page-checker" class="page">
+        <div class="grid-2">
+          <!-- Cột trái: Nhập liệu + Tải tệp + Khai báo nguồn -->
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📝 Nhập dữ liệu đầu vào & Tải lên tệp</div>
+                <button class="btn btn-outline" style="padding:6px 12px; font-size:12.5px;" onclick="loadSampleText()">
+                  Dùng dữ liệu mẫu
+                </button>
+              </div>
+
+              <label style="font-size:13px; font-weight:600; color:#475569; display:block; margin-bottom:6px;">
+                Nội dung cần kiểm tra trước khi đưa vào AI:
+              </label>
+              <textarea id="inputText" rows="7" placeholder="Dán văn bản, câu lệnh (prompt), email, hoặc thông tin khách hàng vào đây..."></textarea>
+
+              <!-- Khu vực tải tệp kết hợp luôn ở phần kiểm chứng thông tin -->
+              <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <input type="file" id="fileInput" hidden accept=".txt,.csv,.json,.md,.log,.html,.xml,.pdf,.doc,.docx" onchange="handleFileUpload(event)" />
+                <div style="font-size:26px; margin-bottom:6px;">📂</div>
+                <p><strong>Nhấn để tải lên tệp</strong> hoặc kéo thả tệp vào đây</p>
+                <p style="font-size:12px; color:#64748b; margin-top:4px;">Hỗ trợ đọc trực tiếp .txt, .csv, .json, .md, .log (và kiểm tra cảnh báo tệp .pdf/.docx)</p>
+                <div id="uploadedFileInfo"></div>
+              </div>
+
+              <!-- Yêu cầu khai báo nguồn -->
+              <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+                <div style="font-size:14px; font-weight:700; margin-bottom:10px; color:#0f172a;">
+                  📚 Yêu cầu khai báo nguồn dữ liệu
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                  <div>
+                    <label style="font-size:12.5px; color:#475569; font-weight:600;">Loại nguồn dữ liệu *</label>
+                    <select id="sourceType">
+                      <option value="">-- Chọn loại nguồn --</option>
+                      <option value="self">Tự biên soạn / Học tập</option>
+                      <option value="public">Nguồn công khai có trích dẫn</option>
+                      <option value="internal">Tài liệu nội bộ cơ quan / doanh nghiệp</option>
+                      <option value="thirdparty">Dữ liệu thu thập từ khách hàng / bên thứ 3</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="font-size:12.5px; color:#475569; font-weight:600;">Liên kết / Tên nguồn trích dẫn</label>
+                    <input type="text" id="sourceRef" placeholder="VD: Giáo trình, URL chính thống..." />
+                  </div>
+                </div>
+                <label class="check-row" style="margin-bottom:0;">
+                  <input type="checkbox" id="sourceConsent" />
+                  <span>Tôi xác nhận có quyền sử dụng dữ liệu này và không chia sẻ bí mật cá nhân trái phép cho AI bên thứ ba.</span>
+                </label>
+              </div>
+
+              <div style="display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="analyzeData()">🔍 Phân tích & Kiểm chứng ngay</button>
+                <button class="btn btn-warning" onclick="maskSensitiveData()">🛡️ Che thông tin cá nhân</button>
+                <button class="btn btn-outline" onclick="clearChecker()">Xóa trắng</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cột phải: Đánh giá mức độ nguy hiểm + Highlight + Nhắc kiểm chứng đầu ra -->
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📊 Đánh giá mức độ nguy hiểm thông tin</div>
+                <span class="tag tag-safe" id="riskBadge">Chưa kiểm tra</span>
+              </div>
+
+              <div class="risk-banner" id="riskBanner">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <strong id="riskLevelTitle">Sẵn sàng kiểm tra dữ liệu</strong>
+                  <span id="riskScoreText" style="font-weight:800; font-size:15px;">0/100 điểm rủi ro</span>
+                </div>
+                <div class="risk-bar-track">
+                  <div class="risk-bar-fill" id="riskBarFill"></div>
+                </div>
+                <p id="riskSummary" style="font-size:13px; color:#334155;">
+                  Hãy nhập văn bản hoặc tải tệp lên rồi nhấn “Phân tích & Kiểm chứng ngay”.
+                </p>
+              </div>
+
+              <!-- Cảnh báo nguồn -->
+              <div id="sourceWarningBox" style="display:none; background:#fff7ed; border:1px solid #fdba74; color:#9a3412; padding:10px 12px; border-radius:10px; font-size:13px; margin-bottom:14px;"></div>
+
+              <!-- Chi tiết phát hiện PII -->
+              <div style="font-size:13.5px; font-weight:700; margin-bottom:8px;">🔎 Thông tin nhạy cảm phát hiện được:</div>
+              <div id="findingsList" style="margin-bottom:14px;">
+                <p style="font-size:13px; color:#64748b;">Chưa có dữ liệu phân tích.</p>
+              </div>
+
+              <!-- Bản xem trước đánh dấu vùng nguy hiểm -->
+              <div style="font-size:13.5px; font-weight:700; margin-bottom:6px;">🖍️ Đánh dấu vùng dữ liệu cần lưu ý:</div>
+              <div class="highlight-preview" id="highlightPreview">Nội dung sau khi quét sẽ hiển thị và tô đỏ các thông tin cá nhân tại đây...</div>
+
+              <!-- Nhắc người dùng kiểm chứng đầu ra -->
+              <div class="checklist-box">
+                <div style="font-weight:700; font-size:13.5px; color:#92400e; margin-bottom:8px;">
+                  ⚠️ Nhắc nhở kiểm chứng đầu ra AI (Output Verification)
+                </div>
+                <label class="check-row">
+                  <input type="checkbox" class="verify-chk" />
+                  <span>Đối chiếu số liệu, ngày tháng và trích dẫn từ AI với ít nhất 2 nguồn uy tín.</span>
+                </label>
+                <label class="check-row">
+                  <input type="checkbox" class="verify-chk" />
+                  <span>Kiểm tra xem AI có suy diễn sai (ảo giác thông tin) hoặc thiên lệch nội dung không.</span>
+                </label>
+                <label class="check-row" style="margin-bottom:0;">
+                  <input type="checkbox" class="verify-chk" />
+                  <span>Con người chịu trách nhiệm phê duyệt cuối cùng trước khi công bố hoặc gửi đi.</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TRANG 3: LỊCH SỬ TRA CỨU (KÍNH LÚP) ==================== -->
+      <section id="page-history" class="page">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔍 Lịch sử tra cứu & Kiểm tra dữ liệu</div>
+            <button class="btn btn-danger" onclick="clearHistory()">🗑️ Xóa toàn bộ lịch sử</button>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px; margin-bottom:18px;">
+            <input type="text" id="historySearch" placeholder="Tìm kiếm trong lịch sử (tên tệp, nội dung, nguồn...)" oninput="renderHistory()" />
+            <select id="historyFilter" onchange="renderHistory()">
+              <option value="all">Tất cả mức độ nguy hiểm</option>
+              <option value="Nghiêm trọng">Nghiêm trọng</option>
+              <option value="Cao">Cao</option>
+              <option value="Trung bình">Trung bình</option>
+              <option value="Thấp">Thấp</option>
+              <option value="An toàn">An toàn</option>
+            </select>
+          </div>
+
+          <div id="historyList"></div>
+        </div>
+      </section>
+
+      <!-- ==================== TRANG 4: CÀI ĐẶT & QUY TẮC AI ==================== -->
+      <section id="page-settings" class="page">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">⚙️ Cấu hình bộ lọc thông tin cá nhân (PII)</div>
+            </div>
+            <div class="switch-row">
+              <div>
+                <strong>Phát hiện Số điện thoại Việt Nam</strong>
+                <div style="font-size:12.5px; color:#64748b;">Cảnh báo các đầu số 03, 05, 07, 08, 09, +84</div>
+              </div>
+              <input type="checkbox" id="rulePhone" checked onchange="saveRules()" style="width:20px; height:20px;" />
+            </div>
+            <div class="switch-row">
+              <div>
+                <strong>Phát hiện CCCD / CMND</strong>
+                <div style="font-size:12.5px; color:#64748b;">Cảnh báo chuỗi 9 hoặc 12 chữ số nghi vấn giấy tờ tùy thân</div>
+              </div>
+              <input type="checkbox" id="ruleIdCard" checked onchange="saveRules()" style="width:20px; height:20px;" />
+            </div>
+            <div class="switch-row">
+              <div>
+                <strong>Phát hiện Địa chỉ Email</strong>
+                <div style="font-size:12.5px; color:#64748b;">Cảnh báo email cá nhân và email doanh nghiệp</div>
+              </div>
+              <input type="checkbox" id="ruleEmail" checked onchange="saveRules()" style="width:20px; height:20px;" />
+            </div>
+            <div class="switch-row">
+              <div>
+                <strong>Phát hiện Mật khẩu / API Key / Thẻ ngân hàng</strong>
+                <div style="font-size:12.5px; color:#64748b;">Cảnh báo mức Nghiêm trọng khi phát hiện bí mật hệ thống</div>
+              </div>
+              <input type="checkbox" id="ruleSecret" checked onchange="saveRules()" style="width:20px; height:20px;" />
+            </div>
+            <div class="switch-row">
+              <div>
+                <strong>Phát hiện Từ khóa thông tin nhạy cảm & Địa chỉ</strong>
+                <div style="font-size:12.5px; color:#64748b;">Ví dụ: số tài khoản, địa chỉ nhà, mật khẩu, lương, bệnh án...</div>
+              </div>
+              <input type="checkbox" id="ruleKeyword" checked onchange="saveRules()" style="width:20px; height:20px;" />
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📖 Bộ quy tắc AI Có Trách Nhiệm</div>
+            </div>
+            <ul style="padding-left:18px; line-height:1.8; font-size:14px; color:#334155;">
+              <li><strong>Không đưa dữ liệu thô nhạy cảm:</strong> Luôn ẩn danh tên thật, CCCD, SĐT trước khi gửi lên AI công cộng.</li>
+              <li><strong>Minh bạch nguồn gốc:</strong> Khai báo rõ tài liệu thuộc quyền sở hữu của ai để tránh rủi ro pháp lý.</li>
+              <li><strong>Kiểm chứng đầu ra:</strong> AI có thể tạo ra thông tin nghe rất thuyết phục nhưng sai sự thật.</li>
+              <li><strong>Tôn trọng đạo đức & không phân biệt đối xử:</strong> Không sử dụng AI để tạo tin giả hoặc xâm phạm đời tư người khác.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TRANG 5: PHẢN HỒI ĐÁNH GIÁ & CHAT HỖ TRỢ ==================== -->
+      <section id="page-feedback" class="page">
+        <div class="grid-2">
+          <!-- Form đánh giá 3 nấc cảm xúc -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">⭐ Phản hồi & Đánh giá trải nghiệm</div>
+            </div>
+            <p style="font-size:13.5px; color:#475569;">Hãy chọn mức độ hài lòng của bạn về công cụ kiểm tra AI có trách nhiệm:</p>
+
+            <div class="emoji-scale">
+              <button type="button" class="emoji-btn" id="rateSad" onclick="selectMood('sad')">
+                <span class="emoji-face">😞</span>
+                <strong>Chưa hài lòng</strong>
+                <span>Cần cải thiện thêm</span>
+              </button>
+              <button type="button" class="emoji-btn" id="rateNeutral" onclick="selectMood('neutral')">
+                <span class="emoji-face">😐</span>
+                <strong>Bình thường</strong>
+                <span>Dùng ổn, cần thêm tính năng</span>
+              </button>
+              <button type="button" class="emoji-btn" id="rateHappy" onclick="selectMood('happy')">
+                <span class="emoji-face">😊</span>
+                <strong>Hài lòng</strong>
+                <span>Rất hữu ích & dễ dùng</span>
+              </button>
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Tên của bạn (tùy chọn)</label>
+              <input type="text" id="fbName" placeholder="VD: Minh Anh..." />
+            </div>
+            <div style="margin-bottom:14px;">
+              <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Nội dung góp ý / Báo lỗi</label>
+              <textarea id="fbComment" rows="4" placeholder="Chia sẻ ý kiến của bạn để chúng tôi nâng cấp công cụ tốt hơn..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="submitFeedback()">📩 Gửi đánh giá</button>
+
+            <div id="feedbackHistoryBox" style="margin-top:18px;"></div>
+          </div>
+
+          <!-- Khung chat đánh giá & hỗ trợ trực tiếp -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">💬 Chat đánh giá & Hỗ trợ trực tuyến</div>
+              <span class="tag tag-low">Phản hồi tức thì</span>
+            </div>
+            <div class="support-chat-box">
+              <div class="support-messages" id="supportMessages">
+                <div class="msg bot">
+                  Xin chào! Tôi là chuyên viên hỗ trợ của <strong>AI Có Trách Nhiệm</strong>. Bạn có thể nhắn đánh giá, báo cáo lỗi hoặc hỏi cách sử dụng công cụ ngay tại đây nhé!
+                </div>
+              </div>
+              <div class="chat-input-bar">
+                <input type="text" id="supportInput" placeholder="Nhập góp ý hoặc câu hỏi hỗ trợ..." onkeypress="if(event.key==='Enter') sendSupportMsg()" />
+                <button class="chat-send-btn" onclick="sendSupportMsg()">Gửi</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer giống Ảnh 1 -->
+    <footer class="app-footer">
+      AI Có Trách Nhiệm • Phiên bản demo học tập
+    </footer>
+  </div>
+
+  <!-- ===== CHATBOT TÁCH RIÊNG NỔI GÓC DƯỚI PHẢI (GIỐNG ẢNH 1) ===== -->
+  <button class="chatbot-fab" onclick="toggleChatbot()" aria-label="Mở Chatbot hỗ trợ thông minh">
+    <div class="fab-bubble">
+      <span class="fab-dot"></span>
+      <span class="fab-dot"></span>
+      <span class="fab-dot"></span>
+    </div>
+  </button>
+
+  <div class="chatbot-window" id="chatbotWindow">
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <h4>🤖 Trợ lý AI Có Trách Nhiệm</h4>
+        <span>Hỗ trợ kiểm chứng & bảo mật thông tin</span>
+      </div>
+      <button class="chat-close" onclick="toggleChatbot(false)">✕</button>
+    </div>
+
+    <div class="chat-body" id="chatbotMessages">
+      <div class="msg bot">
+        Chào bạn 👋! Tôi là Chatbot hỗ trợ thông minh. Tôi có thể giúp bạn:
+        <br>• Giải thích mức độ nguy hiểm của dữ liệu
+        <br>• Hướng dẫn che thông tin cá nhân (CCCD, SĐT...)
+        <br>• Cách kiểm chứng thông tin đầu ra của AI
+      </div>
+    </div>
+
+    <div class="quick-replies">
+      <button class="quick-chip" onclick="askQuick('Làm sao để bảo vệ thông tin cá nhân khi dùng AI?')">Bảo vệ PII?</button>
+      <button class="quick-chip" onclick="askQuick('Cách kiểm chứng đầu ra của AI như thế nào?')">Kiểm chứng đầu ra?</button>
+      <button class="quick-chip" onclick="askQuick('Mức độ nguy hiểm cao là gì?')">Mức độ nguy hiểm?</button>
+      <button class="quick-chip" onclick="askQuick('Tại sao phải khai báo nguồn dữ liệu?')">Khai báo nguồn?</button>
+    </div>
+
+    <div class="chat-input-bar">
+      <input type="text" id="chatbotInput" placeholder="Nhắn tin với Chatbot..." onkeypress="if(event.key==='Enter') sendChatbotMsg()" />
+      <button class="chat-send-btn" onclick="sendChatbotMsg()">Gửi</button>
+    </div>
+  </div>
+
+  <!-- ===== JAVASCRIPT XỬ LÝ LOGIC ===== -->
+  <script>
+    // ====== STATE & STORAGE ======
+    let scanHistory = JSON.parse(localStorage.getItem('ai_safe_history') || '[]');
+    let feedbackList = JSON.parse(localStorage.getItem('ai_safe_feedbacks') || '[]');
+    let selectedMood = '';
+    let currentFileName = '';
+
+    const pageMeta = {
+      home: ['Trang chủ • Công cụ AI Có Trách Nhiệm', 'Bảo vệ thông tin cá nhân, minh bạch nguồn dữ liệu và kiểm chứng đầu ra AI'],
+      checker: ['Kiểm tra dữ liệu & Kiểm chứng thông tin', 'Quét dữ liệu đầu vào, tải lên tệp, đánh giá rủi ro và khai báo nguồn'],
+      history: ['Lịch sử tra cứu', 'Xem lại các lần kiểm tra dữ liệu và mức độ nguy hiểm đã ghi nhận'],
+      settings: ['Cài đặt & Bộ lọc bảo mật', 'Tùy chỉnh quy tắc nhận diện thông tin nhạy cảm'],
+      feedback: ['Phản hồi & Đánh giá', 'Đánh giá trải nghiệm theo 3 nấc cảm xúc và trò chuyện hỗ trợ trực tiếp']
+    };
+
+    // ====== NAVIGATION ======
+    function switchPage(pageId, btnElement) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + pageId).classList.add('active');
+
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      if (btnElement) btnElement.classList.add('active');
+
+      document.getElementById('pageTitle').textContent = pageMeta[pageId][0];
+      document.getElementById('pageSubtitle').textContent = pageMeta[pageId][1];
+
+      if (pageId === 'history') renderHistory();
+      if (pageId === 'feedback') renderFeedbacks();
+      if (pageId === 'home') updateStats();
+    }
+
+    function goToChecker() {
+      const btn = document.querySelectorAll('.nav-btn')[1];
+      switchPage('checker', btn);
+    }
+
+    // ====== STATS ======
+    function updateStats() {
+      document.getElementById('statTotalScans').textContent = scanHistory.length;
+      const highCount = scanHistory.filter(i => i.level === 'Cao' || i.level === 'Nghiêm trọng').length;
+      document.getElementById('statHighRisks').textContent = highCount;
+      document.getElementById('statFeedbacks').textContent = feedbackList.length;
+    }
+
+    // ====== FILE UPLOAD + DRAG DROP ======
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        processFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) processFile(file);
+    }
+
+    function processFile(file) {
+      currentFileName = file.name;
+      const sizeKB = (file.size / 1024).toFixed(1);
+      document.getElementById('uploadedFileInfo').innerHTML =
+        <span class="file-pill">📄 ${escapeHtml(file.name)} (${sizeKB} KB)</span>;
+
+      const textExtensions = /\.(txt|csv|json|md|log|html|xml)$/i;
+      if (textExtensions.test(file.name)) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('inputText').value = e.target.result;
+          analyzeData();
+        };
+        reader.readAsText(file, 'UTF-8');
+      } else {
+        document.getElementById('inputText').value =
+          [Tệp đính kèm: ${file.name} | Kích thước: ${sizeKB} KB]\n +
+          Lưu ý: Trình duyệt không đọc trực tiếp nội dung nhị phân của tệp Word/PDF. Vui lòng dán đoạn văn bản cần kiểm tra từ tệp vào đây để quét PII chi tiết, hoặc xác nhận nguồn tài liệu trước khi tải lên AI công cộng.;
+        analyzeData();
+      }
+    }
+
+    function loadSampleText() {
+      document.getElementById('inputText').value =
+        "Họ tên: Nguyễn Văn An\n" +
+        "Số CCCD: 079203001234\n" +
+        "Số điện thoại: 0912345678\n" +
+        "Email liên hệ: nguyenvanan.work@gmail.com\n" +
+        "Địa chỉ nhà: 125 Đường Lê Lợi, Quận 1, TP.HCM\n" +
+        "Số tài khoản MB Bank: 9901234567890 - Mã API test: sk-proj-abc123456789xyz\n" +
+        "Yêu cầu AI viết email báo cáo doanh thu nội bộ quý 3.";
+      analyzeData();
+    }
+
+    function clearChecker() {
+      document.getElementById('inputText').value = '';
+      document.getElementById('sourceType').value = '';
+      document.getElementById('sourceRef').value = '';
+      document.getElementById('sourceConsent').checked = false;
+      document.getElementById('uploadedFileInfo').innerHTML = '';
+      currentFileName = '';
+      document.getElementById('riskBadge').className = 'tag tag-safe';
+      document.getElementById('riskBadge').textContent = 'Chưa kiểm tra';
+      document.getElementById('riskLevelTitle').textContent = 'Sẵn sàng kiểm tra dữ liệu';
+      document.getElementById('riskScoreText').textContent = '0/100 điểm rủi ro';
+      document.getElementById('riskBarFill').style.width = '0%';
+      document.getElementById('riskSummary').textContent = 'Hãy nhập văn bản hoặc tải tệp lên rồi nhấn “Phân tích & Kiểm chứng ngay”.';
+      document.getElementById('findingsList').innerHTML = '<p style="font-size:13px; color:#64748b;">Chưa có dữ liệu phân tích.</p>';
+      document.getElementById('highlightPreview').textContent = 'Nội dung sau khi quét sẽ hiển thị và tô đỏ các thông tin cá nhân tại đây...';
+      document.getElementById('sourceWarningBox').style.display = 'none';
+    }
+
+    // ====== PII DETECTION & RISK EVALUATION ======
+    function getActiveRules() {
+      return {
+        phone: document.getElementById('rulePhone').checked,
+        idCard: document.getElementById('ruleIdCard').checked,
+        email: document.getElementById('ruleEmail').checked,
+        secret: document.getElementById('ruleSecret').checked,
+        keyword: document.getElementById('ruleKeyword').checked
+      };
+    }
+
+    function saveRules() {
+      // Trigger re-analysis if text exists
+      if (document.getElementById('inputText').value.trim()) analyzeData(false);
+    }
+
+    function analyzeData(saveToHistory = true) {
+      const text = document.getElementById('inputText').value.trim();
+      if (!text) {
+        alert('Vui lòng nhập nội dung hoặc tải lên tệp trước khi phân tích!');
+        return;
+      }
+
+      const rules = getActiveRules();
+      const findings = [];
+      let score = 0;
+
+      const patterns = [];
+      if (rules.secret) {
+        patterns.push({
+          type: 'API Key / Token bí mật',
+          regex: /(sk-[a-zA-Z0-9_-]{10,}|AIza[0-9A-Za-z\-_]{20,}|ghp_[a-zA-Z0-9]{20,})/g,
+          weight: 45,
+          severity: 'Nghiêm trọng',
+          tagClass: 'tag-critical'
+        });
+        patterns.push({
+          type: 'Mật khẩu / Mã PIN',
+          regex: /(mật khẩu|password|passcode|mã pin|stk|số tài khoản)\s*[:\-]?\s*[^\s,\n]{4,}/gi,
+          weight: 35,
+          severity: 'Nghiêm trọng',
+          tagClass: 'tag-critical'
+        });
+      }
+      if (rules.idCard) {
+        patterns.push({
+          type: 'CCCD / CMND (9 hoặc 12 số)',
+          regex: /\b(\d{12}|\d{9})\b/g,
+          weight: 35,
+          severity: 'Cao',
+          tagClass: 'tag-high'
+        });
+      }
+      if (rules.phone) {
+        patterns.push({
+          type: 'Số điện thoại',
+          regex: /(?:\+84|0)(?:3|5|7|8|9)\d{8}\b/g,
+          weight: 22,
+          severity: 'Trung bình',
+          tagClass: 'tag-medium'
+        });
+      }
+      if (rules.email) {
+        patterns.push({
+          type: 'Địa chỉ Email',
+          regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+          weight: 18,
+          severity: 'Trung bình',
+          tagClass: 'tag-medium'
+        });
+      }
+      if (rules.keyword) {
+        patterns.push({
+          type: 'Thông tin nhạy cảm / Địa chỉ',
+          regex: /(địa chỉ|số nhà|quận\s+\d+|phường\s+\w+|lương\s*[:\-]?\s*\d+|bệnh án|hồ sơ mật|nội bộ)/gi,
+          weight: 15,
+          severity: 'Thấp',
+          tagClass: 'tag-low'
+        });
+      }
+
+      let highlightedHtml = escapeHtml(text);
+      const matchedValues = new Set();
+
+      patterns.forEach(p => {
+        const matches = text.match(p.regex);
+        if (matches && matches.length > 0) {
+          const unique = [...new Set(matches)];
+          score += p.weight + (unique.length - 1) * 5;
+          findings.push({
+            type: p.type,
+            samples: unique,
+            severity: p.severity,
+            tagClass: p.tagClass
+          });
+          unique.forEach(val => matchedValues.add(val));
+        }
+      });
+
+      // Check source declaration
+      const sourceType = document.getElementById('sourceType').value;
+      const sourceConsent = document.getElementById('sourceConsent').checked;
+      const sourceWarn = document.getElementById('sourceWarningBox');
+      let sourceIssues = [];
+      if (!sourceType) sourceIssues.push('Chưa chọn loại nguồn dữ liệu.');
+      if (!sourceConsent) sourceIssues.push('Chưa tích xác nhận quyền sử dụng & bảo mật dữ liệu.');
+      if (sourceType === 'internal' || sourceType === 'thirdparty') {
+        score += 15;
+        sourceIssues.push('Dữ liệu nội bộ hoặc bên thứ 3 cần ẩn danh kỹ trước khi dùng AI công cộng.');
+      }
+
+      if (sourceIssues.length > 0) {
+        sourceWarn.style.display = 'block';
+        sourceWarn.innerHTML = '<strong>📌 Nhắc nhở khai báo nguồn:</strong> ' + sourceIssues.join(' ');
+      } else {
+        sourceWarn.style.display = 'none';
+      }
+
+      score = Math.min(100, score);
+
+      // Determine Risk Level
+      let level = 'An toàn';
+      let color = '#10b981';
+      let bg = '#ecfdf5';
+      let badgeCls = 'tag-safe';
+      let summary = 'Không phát hiện thông tin cá nhân nhạy cảm. Bạn vẫn nên kiểm chứng thông tin đầu ra của AI.';
+
+      if (score >= 75) {
+        level = 'Nghiêm trọng';
+        color = '#ef4444'; bg = '#fef2f2'; badgeCls = 'tag-critical';
+        summary = 'CẢNH BÁO ĐỎ: Chứa dữ liệu bí mật hoặc nhiều thông tin định danh cá nhân! Tuyệt đối KHÔNG gửi trực tiếp lên AI công cộng.';
+      } else if (score >= 50) {
+        level = 'Cao';
+        color = '#f97316'; bg = '#fff7ed'; badgeCls = 'tag-high';
+        summary = 'Nguy cơ lộ thông tin cá nhân cao (CCCD, SĐT, tài khoản...). Hãy bấm nút “Che thông tin cá nhân” trước khi sử dụng.';
+      } else if (score >= 25) {
+        level = 'Trung bình';
+        color = '#f59e0b'; bg = '#fffbeb'; badgeCls = 'tag-medium';
+        summary = 'Có chứa một số thông tin liên hệ hoặc dữ liệu cần cân nhắc ẩn danh trước khi chia sẻ.';
+      } else if (score > 0) {
+        level = 'Thấp';
+        color = '#3b82f6'; bg = '#eff6ff'; badgeCls = 'tag-low';
+        summary = 'Rủi ro thấp. Vui lòng hoàn tất khai báo nguồn và kiểm chứng đầu ra khi dùng AI.';
+      }
+
+      // Update UI
+      const banner = document.getElementById('riskBanner');
+      banner.style.borderLeftColor = color;
+      banner.style.background = bg;
+
+      const badge = document.getElementById('riskBadge');
+      badge.className = 'tag ' + badgeCls;
+      badge.textContent = 'Mức độ: ' + level;
+
+      document.getElementById('riskLevelTitle').textContent = 'Mức độ nguy hiểm: ' + level;
+      document.getElementById('riskScoreText').textContent = score + '/100 điểm rủi ro';
+      document.getElementById('riskSummary').textContent = summary;
+
+      const fill = document.getElementById('riskBarFill');
+      fill.style.width = Math.max(score, 6) + '%';
+      fill.style.background = color;
+
+      // Render findings
+      const listEl = document.getElementById('findingsList');
+      if (findings.length === 0) {
+        listEl.innerHTML = '<div class="finding-item"><span>✅ Không phát hiện SĐT, Email, CCCD hoặc mật khẩu.</span><span class="tag tag-safe">Sạch</span></div>';
+      } else {
+        listEl.innerHTML = findings.map(f => `
+          <div class="finding-item">
+            <div>
+              <strong>${f.type}</strong>
+              <div style="font-size:12px; color:#64748b; margin-top:2px;">Phát hiện: ${f.samples.map(s => escapeHtml(s)).join(', ')}</div>
+            </div>
+            <span class="tag ${f.tagClass}">${f.severity}</span>
+          </div>
+        `).join('');
+      }
+
+      // Highlight matches in preview
+      const sortedVals = [...matchedValues].sort((a, b) => b.length - a.length);
+      sortedVals.forEach(val => {
+        const escapedVal = escapeHtml(val).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        highlightedHtml = highlightedHtml.replace(new RegExp(escapedVal, 'g'), <mark class="pii-mark">${escapeHtml(val)}</mark>);
+      });
+      document.getElementById('highlightPreview').innerHTML = highlightedHtml;
+
+      // Save to history
+      if (saveToHistory) {
+        scanHistory.unshift({
+          id: Date.now(),
+          time: new Date().toLocaleString('vi-VN'),
+          fileName: currentFileName || 'Văn bản nhập trực tiếp',
+          snippet: text.slice(0, 130) + (text.length > 130 ? '...' : ''),
+          score,
+          level,
+          badgeCls,
+          findingsCount: findings.length,
+          sourceDeclared: sourceType ? sourceType : 'Chưa khai báo'
+        });
+        if (scanHistory.length > 50) scanHistory.pop();
+        localStorage.setItem('ai_safe_history', JSON.stringify(scanHistory));
+        updateStats();
+      }
+    }
+
+    function maskSensitiveData() {
+      let text = document.getElementById('inputText').value;
+      if (!text.trim()) return;
+
+      text = text
+        .replace(/(sk-[a-zA-Z0-9_-]{10,}|AIza[0-9A-Za-z\-_]{20,}|ghp_[a-zA-Z0-9]{20,})/g, '[API_KEY_ĐÃ_ẨN]')
+        .replace(/\b(\d{12}|\d{9})\b/g, '[CCCD_ĐÃ_ẨN]')
+        .replace(/(?:\+84|0)(?:3|5|7|8|9)\d{8}\b/g, '[SĐT_ĐÃ_ẨN]')
+        .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL_ĐÃ_ẨN]');
+
+      document.getElementById('inputText').value = text;
+      analyzeData(false);
+      alert('✅ Đã che các thông tin nhạy cảm (CCCD, SĐT, Email, API Key) thành công!');
+    }
+
+    // ====== HISTORY ======
+    function renderHistory() {
+      const query = (document.getElementById('historySearch').value || '').toLowerCase();
+      const filter = document.getElementById('historyFilter').value;
+      const container = document.getElementById('historyList');
+
+      const filtered = scanHistory.filter(item => {
+        const matchText = item.snippet.toLowerCase().includes(query) || item.fileName.toLowerCase().includes(query);
+        const matchLevel = filter === 'all' || item.level === filter;
+        return matchText && matchLevel;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<p style="color:#64748b; text-align:center; padding:24px;">Chưa có lịch sử tra cứu phù hợp.</p>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => `
+        <div class="history-item">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+              <span class="tag ${item.badgeCls}">${item.level} (${item.score}/100)</span>
+              <strong style="font-size:14px;">📄 ${escapeHtml(item.fileName)}</strong>
+              <span style="font-size:12px; color:#64748b;">• ${item.time}</span>
+            </div>
+            <p style="font-size:13.5px; color:#334155; margin-bottom:4px;">${escapeHtml(item.snippet)}</p>
+            <div style="font-size:12px; color:#64748b;">
+              Phát hiện ${item.findingsCount} nhóm nhạy cảm • Nguồn: <strong>${escapeHtml(item.sourceDeclared)}</strong>
+            </div>
+          </div>
+          <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="deleteHistoryItem(${item.id})">Xóa</button>
+        </div>
+      `).join('');
+    }
+
+    function deleteHistoryItem(id) {
+      scanHistory = scanHistory.filter(i => i.id !== id);
+      localStorage.setItem('ai_safe_history', JSON.stringify(scanHistory));
+      renderHistory();
+      updateStats();
+    }
+
+    function clearHistory() {
+      if (confirm('Bạn có chắc muốn xóa toàn bộ lịch sử tra cứu?')) {
+        scanHistory = [];
+        localStorage.setItem('ai_safe_history', '[]');
+        renderHistory();
+        updateStats();
+      }
+    }
+
+    // ====== FEEDBACK (3 NẤC CẢM XÚC + CHAT HỖ TRỢ) ======
+    function selectMood(mood) {
+      selectedMood = mood;
+      document.getElementById('rateSad').className = 'emoji-btn' + (mood === 'sad' ? ' selected-sad' : '');
+      document.getElementById('rateNeutral').className = 'emoji-btn' + (mood === 'neutral' ? ' selected-neutral' : '');
+      document.getElementById('rateHappy').className = 'emoji-btn' + (mood === 'happy' ? ' selected-happy' : '');
+    }
+
+    function submitFeedback() {
+      if (!selectedMood) {
+        alert('Vui lòng chọn 1 biểu tượng cảm xúc (Buồn / Bình thường / Cười) trước khi gửi!');
+        return;
+      }
+      const name = document.getElementById('fbName').value.trim() || 'Người dùng ẩn danh';
+      const comment = document.getElementById('fbComment').value.trim() || 'Không có ghi chú thêm.';
+      const moodMap = {
+        sad: '😞 Chưa hài lòng',
+        neutral: '😐 Bình thường',
+        happy: '😊 Hài lòng'
+      };
+
+      feedbackList.unshift({
+        name,
+        moodLabel: moodMap[selectedMood],
+        comment,
+        time: new Date().toLocaleString('vi-VN')
+      });
+      localStorage.setItem('ai_safe_feedbacks', JSON.stringify(feedbackList));
+      document.getElementById('fbComment').value = '';
+      renderFeedbacks();
+      updateStats();
+      alert('Cảm ơn bạn đã gửi đánh giá! Ý kiến của bạn đã được ghi nhận.');
+    }
+
+    function renderFeedbacks() {
+      const box = document.getElementById('feedbackHistoryBox');
+      if (feedbackList.length === 0) {
+        box.innerHTML = '';
+        return;
+      }
+      box.innerHTML = '<div style="font-size:13.5px; font-weight:700; margin-bottom:8px;">Đánh giá gần đây:</div>' +
+        feedbackList.slice(0, 4).map(f => `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin-bottom:8px; font-size:13px;">
+            <div style="display:flex; justify-content:space-between;">
+              <strong>${escapeHtml(f.name)} • ${f.moodLabel}</strong>
+              <span style="color:#64748b; font-size:11.5px;">${f.time}</span>
+            </div>
+            <div style="color:#334155; margin-top:4px;">${escapeHtml(f.comment)}</div>
+          </div>
+        `).join('');
+    }
+
+    // Support Chat inside Feedback page
+    function sendSupportMsg() {
+      const input = document.getElementById('supportInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      const box = document.getElementById('supportMessages');
+      box.innerHTML += <div class="msg user">${escapeHtml(msg)}</div>;
+      input.value = '';
+      box.scrollTop = box.scrollHeight;
+
+      setTimeout(() => {
+        const reply = generateSmartReply(msg, true);
+        box.innerHTML += <div class="msg bot">${reply}</div>;
+        box.scrollTop = box.scrollHeight;
+      }, 450);
+    }
+
+    // ====== FLOATING CHATBOT (GIỐNG ẢNH 1) ======
+    function toggleChatbot(forceState) {
+      const win = document.getElementById('chatbotWindow');
+      if (typeof forceState === 'boolean') {
+        win.classList.toggle('open', forceState);
+      } else {
+        win.classList.toggle('open');
+      }
+    }
+
+    function askQuick(question) {
+      document.getElementById('chatbotInput').value = question;
+      sendChatbotMsg();
+    }
+
+    function sendChatbotMsg() {
+      const input = document.getElementById('chatbotInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      const box = document.getElementById('chatbotMessages');
+      box.innerHTML += <div class="msg user">${escapeHtml(msg)}</div>;
+      input.value = '';
+      box.scrollTop = box.scrollHeight;
+
+      setTimeout(() => {
+        const reply = generateSmartReply(msg, false);
+        box.innerHTML += <div class="msg bot">${reply}</div>;
+        box.scrollTop = box.scrollHeight;
+      }, 400);
+    }
+
+    function generateSmartReply(text, isSupport) {
+      const q = text.toLowerCase();
+      if (q.includes('cá nhân') || q.includes('pii') || q.includes('bảo vệ') || q.includes('cccd') || q.includes('sđt')) {
+        return '🛡️ <strong>Cách bảo vệ dữ liệu cá nhân:</strong><br>Bạn hãy dán văn bản hoặc tải tệp lên mục <em>Kiểm tra</em>. Công cụ sẽ phát hiện CCCD, SĐT, Email, STK, API Key và cho phép bấm nút <strong>“Che thông tin cá nhân”</strong> để ẩn danh trước khi gửi cho AI.';
+      }
+      if (q.includes('kiểm chứng') || q.includes('đầu ra') || q.includes('ảo giác') || q.includes('sai')) {
+        return '✅ <strong>Mẹo kiểm chứng đầu ra AI:</strong><br>1. Đối chiếu số liệu, trích dẫn luật hoặc sự kiện với ít nhất 2 nguồn uy tín.<br>2. Yêu cầu AI cung cấp nguồn tham khảo cụ thể.<br>3. Luôn tự đọc duyệt lại trước khi sử dụng chính thức.';
+      }
+      if (q.includes('nguy hiểm') || q.includes('mức độ') || q.includes('điểm')) {
+        return '📊 <strong>5 mức độ nguy hiểm:</strong><br>• <b>An toàn / Thấp:</b> Ít hoặc không có PII.<br>• <b>Trung bình:</b> Có SĐT, Email.<br>• <b>Cao:</b> Có CCCD/CMND hoặc nhiều dữ liệu định danh.<br>• <b>Nghiêm trọng:</b> Lộ mật khẩu, số tài khoản, API key. Không nên gửi lên AI!';
+      }
+      if (q.includes('nguồn') || q.includes('bản quyền')) {
+        return '📚 <strong>Tại sao cần khai báo nguồn?</strong><br>Khai báo nguồn giúp bạn xác định dữ liệu có phải tài liệu mật nội bộ hay dữ liệu khách hàng hay không, tránh vi phạm bản quyền và bảo mật thông tin.';
+      }
+      if (q.includes('tệp') || q.includes('file') || q.includes('upload')) {
+        return '📂 Bạn có thể tải tệp trực tiếp ở trang <strong>Kiểm tra</strong> (kéo thả hoặc nhấn chọn tệp). Các tệp văn bản (.txt, .csv, .json, .md) sẽ được đọc và quét tự động ngay lập tức!';
+      }
+      if (q.includes('lỗi') || q.includes('góp ý') || q.includes('cải thiện') || isSupport) {
+        return '🙏 Cảm ơn phản hồi của bạn! Đội ngũ hỗ trợ đã ghi nhận nội dung này để nâng cấp hệ thống. Bạn cũng có thể chọn biểu tượng cảm xúc 😞 😐 😊 ở trang Đánh giá nhé.';
+      }
+      if (q.includes('chào') || q.includes('hello') || q.includes('hi')) {
+        return 'Chào bạn! Tôi sẵn sàng hỗ trợ bạn kiểm tra an toàn dữ liệu đầu vào và hướng dẫn kiểm chứng thông tin AI. Bạn cần giúp gì hôm nay?';
+      }
+      return '🤖 Tôi đã hiểu câu hỏi của bạn. Để kiểm tra văn bản hoặc tệp tài liệu, bạn hãy mở mục <strong>Kiểm tra (biểu tượng tài liệu)</strong> bên trái. Hoặc hỏi tôi về: <em>“Bảo vệ PII”, “Mức độ nguy hiểm”, “Kiểm chứng đầu ra”</em> nhé!';
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Init
+    updateStats();
+  </script>
+</body>
+</html>
